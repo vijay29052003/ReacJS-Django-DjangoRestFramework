@@ -1,0 +1,562 @@
+School Management System Project using ReacJS & Django & DjangoRestFramework
+=============================================================================
+FrontEnd:ReactJS
+BackEnd:Django & Django_Rest_Framework
+DataBase:Mysql Database
+Software Tool:XAMMP Tool
+Api Testing Tool :POSTMAN
+==============================================================================
+step_1:
+======
+pip install django==3.2
+
+step_2:
+=======
+django-admin startproject SchoolProject
+
+
+Step_3:
+======
+Lets Install Mysql
+
+pip install pymysql
+
+For updating pip use following commands
+
+pip install pymysql --upgrade
+
+
+Step_4:
+======
+Create a virtual env
+
+python -m venv Env
+
+Step_5:
+======
+cd Env\Scripts
+
+
+step_6:
+=======
+activate
+
+step_7:
+=======
+cd ../..
+
+
+step_8:
+======
+Again install django==3.2 on top of VM
+
+pip install django==3.2
+
+
+step_9:
+======
+Create new application
+
+python manage.py startapp StudentApp
+
+
+step_10:
+=======
+StudentApp we have to added in to the setting.py
+
+'StudentApp.apps.StudentappConfig'
+
+
+step_11:
+=======
+After that Create the Model
+
+from django.db import models
+class Student(models.Model):
+    name = models.CharField(max_length = 255)
+    address = models.CharField(max_length = 255)
+    fee = models.IntegerField()
+
+
+step_12: ----> for FrontEnd Part(ReactJS)
+=========================================
+Install the CORS
+
+pip install django-cors-headers
+
+step_13:
+========
+Install the Rest Framework
+
+pip install djangorestframework
+
+step_14:
+=======
+Add the dependencies in to the settings.py inside the INSTALLED_APPS
+
+'corsheaders',
+'rest_framework',
+'StudentApp.apps.StudentappConfig'
+
+
+CORS_ORIGIN_ALLOW_ALL = True
+
+CORS_ALLOW_ALL_HEADERS=True
+
+
+
+
+step_15:
+=======
+in to the settings.py inside the MIDDLEWARE add this dependencies
+
+'corsheaders.middleware.CorsMiddleware',
+
+
+step_16:
+=======
+After that select StudentApp Folder inside the create the file serializers.py
+
+serializers.py:
+=========
+
+from rest_framework import serializers
+from StudentApp.models import Student
+
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = '__all__'
+
+
+step_17:
+=======
+Install the database Url  type by the following command
+
+pip install dj-database-url
+
+step_18:
+=======
+Add in setting.py 
+=================
+for mysqlclient 
+
+
+import pymysql
+pymysql.install_as_MySQLdb()
+
+
+step_19:
+=======
+After that Configure the database connection on settings.py
+settings.py
+
+import dj_database_url
+
+DATABASES['default'] = dj_database_url.parse('mysql://root@localhost/kms')
+
+
+step_20:
+=======
+After that run the migration command 
+
+python manage.py makemigrations
+
+
+step_21:
+=======
+After done successfully. then type following command
+
+python manage.py migrate
+
+
+step_22:
+=======
+After that open views.py for generating views
+
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.parsers import JSONParser
+from django.http.response import JsonResponse
+from StudentApp.serializers import StudentSerializer
+from StudentApp.models import Student
+
+@csrf_exempt
+def studentApi(request,id=0):
+    if request.method=='GET':
+        student = Student.objects.all()
+        student_serializer=StudentSerializer(student,many=True)
+        return JsonResponse(student_serializer.data,safe=False)
+    elif request.method=='POST':
+        student_data=JSONParser().parse(request)
+        student_serializer=StudentSerializer(data=student_data)
+        if student_serializer.is_valid():
+            student_serializer.save()
+            return JsonResponse("Added Successfully",safe=False)
+        return JsonResponse("Failed to Add",safe=False)
+    elif request.method=='PUT':
+        student_data=JSONParser().parse(request)
+        student=Student.objects.get(id=id)
+        student_serializer=StudentSerializer(student,data=student_data)
+        if student_serializer.is_valid():
+            student_serializer.save()
+            return JsonResponse("Updated Successfully",safe=False)
+        return JsonResponse("Failed to Update")
+    elif request.method=='DELETE':
+        student=Student.objects.get(id=id)
+        student.delete()
+        return JsonResponse("Deleted Successfully",safe=False)
+
+
+
+step_23:
+========
+from django.contrib import admin
+from django.urls import path
+from django.conf.urls import url
+from StudentApp import views
+
+urlpatterns = [
+    url(r'^student$',views.studentApi),
+    url(r'^student$',views.studentApi),
+    url(r'^student/([0-9]+)$',views.studentApi),
+    path('admin/', admin.site.urls),
+]
+
+
+step_24:
+=======
+Run the Project
+
+python manage.py runserver
+
+
+step_25:
+=======
+Creating a react application
+
+npx create-react-app front-end
+
+
+
+
+
+
+
+
+step_27:
+=======
+After that install the axios by typing the following command
+
+npm i axios
+
+
+step_28:
+=======
+Create a Folder Component inside folder Create a new Component Student.js 
+
+Add in App.js:
+==========
+
+import Student from "./components/Student";
+
+  <Student />
+
+Student.js:
+==========
+import {useEffect, useState } from "react";
+import axios from 'axios';
+function Student()
+{
+
+  const [id, setId] = useState('');
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const [fee, setFee] = useState("");
+  const [students, setUsers] = useState([]);
+
+
+useEffect(() => {
+  (async () => await Load())();
+  }, []);
+  
+  
+  async function  Load()
+  {
+     const result = await axios.get(
+         "http://127.0.0.1:8000/student");
+         setUsers(result.data);
+         console.log(result.data);
+  }
+    
+  
+ async function save(event)
+    {
+        event.preventDefault();
+    try
+        {
+         await axios.post("http://127.0.0.1:8000/student",
+        {
+        
+          name: name,
+          address: address,
+          fee: fee
+        
+        });
+          alert("Student Registation Successfully");
+          setId("");
+          setName("");
+          setAddress("");
+          setFee("");
+          Load();
+
+      
+        
+        }
+    catch(err)
+        {
+          alert("Student Registation Failed");
+        }
+   }
+
+
+
+   async function editStudent(students)
+   {
+    setName(students.name);
+    setAddress(students.address);
+    setFee(students.fee);
+    setId(students.id);
+    
+   }
+   async function DeleteStudent(id)
+   {
+      
+        await axios.delete("http://127.0.0.1:8000/student/" + id);
+        alert("Student deleted Successfully");
+        setId("");
+        setName("");
+        setAddress("");
+        setFee("");
+        Load();
+  
+  
+   }
+   async function update(event)
+   {
+    event.preventDefault();
+   try
+       {
+        
+        await axios.put("http://127.0.0.1:8000/student/"+ students.find(u => u.id === id).id || id,
+       {
+         id: id,
+         name: name,
+         address: address,
+         fee: fee
+      
+       });
+         alert("Student Updateddddd");
+         setId("");
+         setName("");
+         setAddress("");
+         setFee("");
+         Load();
+      
+       }
+   catch(err)
+       {
+         alert(" Student updateddd Failed");
+       }
+  }
+  return (
+    <div>
+       <h1>Student Details</h1>
+       <div class="container mt-4" >
+          <form>
+              <div class="form-group">
+
+               <label>Student Name</label>
+                <input  type="text" class="form-control" id="name"
+                value={name}
+                onChange={(event) =>
+                  {
+                    setName(event.target.value);      
+                  }}
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Address</label>
+                <input  type="text" class="form-control" id="address"
+                 value={address}
+                  onChange={(event) =>
+                    {
+                     setAddress(event.target.value);      
+                    }}
+                />
+              </div>
+              <div class="form-group">
+                <label>Fee</label>
+                <input type="text" class="form-control" id="fee"
+                  value={fee}
+                onChange={(event) =>
+                  {
+                    setFee(event.target.value);      
+                  }}
+                />
+              </div>
+                 <div>
+              <button   class="btn btn-primary mt-4"  onClick={save}>Register</button> 
+              <button   class="btn btn-warning mt-4"  onClick={update}>Update</button>
+              </div>  
+
+              
+            </form>
+          </div>
+
+
+<table class="table table-dark" align="center">
+  <thead>
+    <tr>
+      <th scope="col">Student Id</th>
+      <th scope="col">Student Name</th>
+      <th scope="col">Address</th>
+      <th scope="col">Fee</th>
+      
+      <th scope="col">Option</th>
+    </tr>
+  </thead>
+       {students.map(function fn(student)
+       {
+            return(
+            <tbody>
+                <tr>
+                <th scope="row">{student.id} </th>
+                <td>{student.name}</td>
+                <td>{student.address}</td>
+                <td>{student.fee}</td>        
+                <td>
+                    <button type="button" class="btn btn-warning"  onClick={() => editStudent(student)} >Edit</button>  
+                    <button type="button" class="btn btn-danger" onClick={() => DeleteStudent(student.id)}>Delete</button>
+                </td>
+                </tr>
+            </tbody>
+            );
+            })}
+            </table>
+       </div>
+            );
+        }
+export default Student;
+
+
+step_29:
+=======
+Set the out Student.js Component to app.js
+
+app.js
+
+import Student from "./compontents/Student";
+function App() {
+  return (
+
+<div className="App">
+    
+    <Student/>
+  </div>
+  );
+}
+
+export default App;
+
+
+Add in App.js:
+==========
+
+import Student from "./components/Student";
+
+  <Student />
+
+Add complete dependency of boostrap in index.html in reactJS
+============================================================
+
+
+
+step_31:
+========
+add inside the index.js
+
+
+import 'bootstrap/dist/css/bootstrap.min.css';  
+
+<div id="root"></div>
+
+
+Install boostrap plugin:
+=======================
+npm install bootstrap --save 
+
+step_32:
+=======
+Add the Bootstrap styles inside the index.html file. inside the head tag
+
+src --->public---->index.html:
+====================
+<!doctype html>
+<html lang="en">
+  <head>
+ 
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+    <title>PAGE LAYOUTS</title>
+  </head>
+  <body>
+    <div id="root"></div>
+ <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
